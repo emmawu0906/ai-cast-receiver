@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>AI投屏 · 云控终端</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #03030a;
+            color: #e8e8ed;
+            min-height: 100vh;
+            overflow: hidden
+        }
+
+        /* ═══════ 星空背景系统 ═══════ */
+        .starfield {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden
+        }
+
+        /* 星云渐变 */
+        .nebula {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 15% 25%, rgba(30, 60, 120, .25) 0%, transparent 50%),
+                radial-gradient(ellipse at 75% 15%, rgba(60, 40, 100, .15) 0%, transparent 45%),
+                radial-gradient(ellipse at 50% 80%, rgba(20, 50, 90, .12) 0%, transparent 55%),
+                radial-gradient(ellipse at 85% 65%, rgba(40, 30, 80, .1) 0%, transparent 40%);
+        }
+
+        /* 静态星星层1 (小星) */
+        .stars-sm {
+            position: absolute;
+            inset: 0;
+            animation: starDrift 120s linear infinite;
+            box-shadow:
+                24px 80px 0 0 rgba(255, 255, 255, .3), 180px 40px 0 0 rgba(200, 220, 255, .4),
+                340px 120px 0 0 rgba(255, 255, 255, .25), 520px 60px 0 0 rgba(180, 200, 255, .35),
+                700px 200px 0 0 rgba(255, 255, 255, .2), 90px 300px 0 0 rgba(200, 210, 255, .3),
+                250px 380px 0 0 rgba(255, 255, 255, .35), 430px 280px 0 0 rgba(190, 200, 255, .25),
+                600px 350px 0 0 rgba(255, 255, 255, .3), 780px 100px 0 0 rgba(210, 220, 255, .2),
+                850px 320px 0 0 rgba(255, 255, 255, .25), 960px 180px 0 0 rgba(200, 200, 255, .35),
+                1100px 90px 0 0 rgba(255, 255, 255, .3), 1250px 250px 0 0 rgba(190, 210, 255, .2),
+                1400px 150px 0 0 rgba(255, 255, 255, .25), 130px 500px 0 0 rgba(210, 220, 255, .3),
+                310px 550px 0 0 rgba(255, 255, 255, .2), 500px 480px 0 0 rgba(200, 200, 255, .35),
+                670px 520px 0 0 rgba(255, 255, 255, .25), 830px 460px 0 0 rgba(190, 200, 255, .3),
+                1000px 540px 0 0 rgba(255, 255, 255, .2), 1170px 430px 0 0 rgba(210, 210, 255, .3),
+                1340px 510px 0 0 rgba(255, 255, 255, .25), 55px 650px 0 0 rgba(200, 220, 255, .35),
+                230px 700px 0 0 rgba(255, 255, 255, .2), 400px 680px 0 0 rgba(190, 200, 255, .3),
+                580px 730px 0 0 rgba(255, 255, 255, .25), 750px 650px 0 0 rgba(210, 220, 255, .35),
+                920px 700px 0 0 rgba(255, 255, 255, .2), 1090px 660px 0 0 rgba(200, 200, 255, .3),
+                1260px 720px 0 0 rgba(255, 255, 255, .25), 1430px 640px 0 0 rgba(190, 210, 255, .2),
+                45px 820px 0 0 rgba(255, 255, 255, .3), 200px 860px 0 0 rgba(210, 220, 255, .25),
+                380px 800px 0 0 rgba(255, 255, 255, .2), 560px 870px 0 0 rgba(200, 200, 255, .35),
+                720px 810px 0 0 rgba(255, 255, 255, .25), 900px 850px 0 0 rgba(190, 200, 255, .3);
+            width: 1px;
+            height: 1px;
+            border-radius: 50%;
+        }
+
+        /* 星星层2 (中星，闪烁) */
+        .stars-md {
+            position: absolute;
+            inset: 0;
+            animation: twinkle 4s ease-in-out infinite alternate;
+            box-shadow:
+                100px 150px 0 1px rgba(180, 200, 255, .5), 400px 90px 0 1px rgba(255, 255, 255, .4),
+                720px 240px 0 1px rgba(200, 210, 255, .5), 1050px 130px 0 1px rgba(255, 255, 255, .45),
+                1350px 300px 0 1px rgba(190, 200, 255, .4), 200px 420px 0 1px rgba(255, 255, 255, .5),
+                550px 380px 0 1px rgba(210, 220, 255, .4), 880px 440px 0 1px rgba(255, 255, 255, .45),
+                1200px 350px 0 1px rgba(200, 200, 255, .5), 300px 600px 0 1px rgba(255, 255, 255, .4),
+                650px 570px 0 1px rgba(190, 210, 255, .45), 980px 620px 0 1px rgba(255, 255, 255, .5),
+                150px 750px 0 1px rgba(210, 220, 255, .4), 480px 780px 0 1px rgba(255, 255, 255, .45),
+                800px 720px 0 1px rgba(200, 200, 255, .5), 1100px 760px 0 1px rgba(255, 255, 255, .4);
+            width: 1px;
+            height: 1px;
+            border-radius: 50%;
+        }
+
+        /* 大亮星 */
+        .stars-lg {
+            position: absolute;
+            inset: 0;
+            animation: twinkle 6s ease-in-out infinite alternate-reverse;
+            box-shadow:
+                260px 180px 1px 2px rgba(150, 180, 255, .5), 800px 100px 1px 2px rgba(255, 200, 150, .4),
+                1150px 400px 1px 2px rgba(180, 200, 255, .45), 450px 650px 1px 2px rgba(200, 220, 255, .5),
+                1000px 280px 1px 2px rgba(255, 230, 180, .35), 700px 500px 1px 2px rgba(160, 190, 255, .4);
+            width: 1px;
+            height: 1px;
+            border-radius: 50%;
+        }
+
+        @keyframes twinkle {
+            0% {
+                opacity: .5
+            }
+
+            100% {
+                opacity: 1
+            }
+        }
+
+        @keyframes starDrift {
+            0% {
+                transform: translate(0, 0)
+            }
+
+            100% {
+                transform: translate(-30px, -15px)
+            }
+        }
+
+        /* 流星 */
+        .shooting-star {
+            position: absolute;
+            width: 80px;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, .7), transparent);
+            border-radius: 50%;
+            opacity: 0
+        }
+
+        .shooting-star::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: -1px;
+            width: 4px;
+            height: 3px;
+            background: rgba(255, 255, 255, .9);
+            border-radius: 50%;
+            box-shadow: 0 0 6px 2px rgba(150, 180, 255, .6)
+        }
+
+        .ss1 {
+            top: 12%;
+            left: 30%;
+            animation: shoot 4s 1s ease-in infinite;
+            transform: rotate(35deg)
+        }
+
+        .ss2 {
+            top: 25%;
+            left: 60%;
+            animation: shoot 6s 3.5s ease-in infinite;
+            transform: rotate(42deg);
+            width: 60px
+        }
+
+        .ss3 {
+            top: 8%;
+            left: 80%;
+            animation: shoot 5s 5s ease-in infinite;
+            transform: rotate(30deg);
+            width: 100px
+        }
+
+        @keyframes shoot {
+            0% {
+                opacity: 0;
+                transform: rotate(35deg) translateX(0)
+            }
+
+            5% {
+                opacity: 1
+            }
+
+            30% {
+                opacity: 0;
+                transform: rotate(35deg) translateX(300px)
+            }
+
+            100% {
+                opacity: 0
+            }
+        }
+
+        /* ═══════ 待机页 ═══════ */
+        .standby-page {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            z-index: 10;
+            transition: opacity .6s, transform .6s;
+            background: url('space-bg.png') center/cover no-repeat #03030a
+        }
+
+        .standby-page::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(3, 3, 10, .5);
+            pointer-events: none
+        }
+
+        .standby-page.hidden {
+            opacity: 0;
+            transform: scale(.98);
+            pointer-events: none
+        }
+
+        /* 待机页左侧内容 */
+        .standby-left {
+            width: 60%;
+            height: 100%;
+            padding: 0 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: linear-gradient(90deg, rgba(3, 3, 10, .95) 0%, rgba(3, 3, 10, .85) 55%, rgba(3, 3, 10, .4) 80%, transparent 100%);
+            position: relative;
+            z-index: 1
+        }
+
+        .standby-title {
+            font-size: 56px;
+            font-weight: 200;
+            letter-spacing: 5px;
+            margin-bottom: 10px;
+            color: #ffffff;
+            text-shadow: 0 0 40px rgba(74, 144, 226, .15);
+            white-space: nowrap
+        }
+
+        .standby-sub {
+            font-size: 18px;
+            color: #8a90a0;
+            margin-bottom: 52px;
+            letter-spacing: 3px;
+            font-weight: 400
+        }
+
+        .connect-box {
+            display: flex;
+            gap: 32px;
+            align-items: flex-start;
+            background: rgba(255, 255, 255, .03);
+            border: 1px solid rgba(255, 255, 255, .06);
+            border-radius: 16px;
+            padding: 28px 32px;
+            backdrop-filter: blur(12px)
+        }
+
+        .connect-method {
+            text-align: center
+        }
+
+        .connect-label {
+            font-size: 12px;
+            color: #8a90a0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            font-weight: 500
+        }
+
+        .qr-box {
+            width: 180px;
+            height: 180px;
+            background: #fff;
+            border-radius: 12px;
+            padding: 8px;
+            box-shadow: 0 0 40px rgba(74, 144, 226, .12)
+        }
+
+        .qr-box canvas {
+            width: 100%;
+            height: 100%
+        }
+
+        .cast-code {
+            font-size: 60px;
+            font-weight: 700;
+            letter-spacing: 12px;
+            font-family: 'SF Mono', 'Menlo', monospace;
+            color: #5aa0f0;
+            text-shadow: 0 0 30px rgba(74, 144, 226, .35), 0 0 60px rgba(74, 144, 226, .15);
+            margin-top: 8px
+        }
+
+        .divider-line {
+            width: 1px;
+            height: 180px;
+            background: linear-gradient(to bottom, transparent, rgba(100, 140, 200, .2), transparent)
+        }
+
+        .standby-hint {
+            font-size: 13px;
+            color: #556;
+            margin-top: 32px;
+            letter-spacing: .5px
+        }
+
+        .standby-hint span {
+            color: #4A90E2;
+            font-weight: 500
+        }
+
+        /* 脉冲环（移到右侧火箭位置） */
+        .pulse-ring {
+            position: absolute;
+            top: 45%;
+            right: 22%;
+            width: 200px;
+            height: 200px;
+            transform: translate(50%, -50%);
+            border-radius: 50%;
+            border: 1px solid rgba(100, 160, 255, .06);
+            animation: pulseOut 5s ease-out infinite;
+            pointer-events: none
+        }
+
+        .pulse-ring:nth-child(2) {
+            animation-delay: 1.7s;
+            border-color: rgba(120, 140, 255, .04)
+        }
+
+        .pulse-ring:nth-child(3) {
+            animation-delay: 3.4s;
+            border-color: rgba(80, 120, 200, .03)
+        }
+
+        @keyframes pulseOut {
+            0% {
+                width: 100px;
+                height: 100px;
+                opacity: .4
+            }
+
+            100% {
+                width: 400px;
+                height: 400px;
+                opacity: 0
+            }
+        }
+
+        /* 火箭尾焰光效 */
+        .avatar-glow {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            width: 60px;
+            height: 80px;
+            transform: translateX(-50%);
+            background: linear-gradient(to bottom, rgba(100, 160, 255, .3), rgba(60, 120, 255, .15), transparent);
+            border-radius: 0 0 50% 50%;
+            filter: blur(12px);
+            animation: flameGlow 2s ease-in-out infinite
+        }
+
+        @keyframes flameGlow {
+
+            0%,
+            100% {
+                opacity: .6;
+                height: 80px
+            }
+
+            50% {
+                opacity: 1;
+                height: 100px
+            }
+        }
+
+        /* 火箭周围的微型星星环绕 */
+        .avatar-wrap::before {
+            content: '✦';
+            position: absolute;
+            top: 10%;
+            right: -20px;
+            font-size: 10px;
+            color: rgba(200, 220, 255, .6);
+            animation: orbitStar 5s linear infinite
+        }
+
+        .avatar-wrap::after {
+            content: '✧';
+            position: absolute;
+            bottom: 30%;
+            left: -15px;
+            font-size: 8px;
+            color: rgba(180, 200, 255, .5);
+            animation: orbitStar 7s linear infinite reverse
+        }
+
+        @keyframes orbitStar {
+            0% {
+                transform: rotate(0deg) translateX(15px) rotate(0deg);
+                opacity: .3
+            }
+
+            50% {
+                opacity: 1
+            }
+
+            100% {
+                transform: rotate(360deg) translateX(15px) rotate(-360deg);
+                opacity: .3
+            }
+        }
+
+        width: 500px;
+        height: 500px;
+        opacity: 0
+        }
+        }
+
+        /* ═══════ 活跃页 ═══════ */
+        .active-page {
+            position: absolute;
+            inset: 0;
+            display: none;
+            z-index: 10
+        }
+
+        .active-page.visible {
+            display: flex
+        }
+
+        /* 顶栏 */
+        .top-bar {
+            height: 48px;
+            background: rgba(8, 8, 13, .9);
+            border-bottom: 1px solid #1a1a24;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            backdrop-filter: blur(10px);
+            flex-shrink: 0
+        }
+
+        .top-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .top-logo img {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px
+        }
+
+        .top-logo span {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: .5px
+        }
+
+        .top-status {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 16px
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #34C759;
+            box-shadow: 0 0 8px rgba(52, 199, 89, .4);
+            animation: blink 2s infinite
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .4
+            }
+        }
+
+        .status-text {
+            font-size: 12px;
+            color: #888
+        }
+
+        .top-time {
+            font-size: 12px;
+            color: #555;
+            font-family: 'SF Mono', monospace
+        }
+
+        /* 主体 */
+        .main-body {
+            flex: 1;
+            display: flex;
+            overflow: hidden
+        }
+
+        /* 左面板 */
+        .left-panel {
+            width: 280px;
+            border-right: 1px solid #1a1a24;
+            display: flex;
+            flex-direction: column;
+            background: rgba(10, 10, 16, .6)
+        }
+
+        .device-card {
+            margin: 12px;
+            background: #0e0e18;
+            border: 1px solid #1e1e28;
+            border-radius: 12px;
+            padding: 14px
+        }
+
+        .device-card h3 {
+            font-size: 12px;
+            color: #555;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px
+        }
+
+        .device-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 12px
+        }
+
+        .device-row .k {
+            color: #555
+        }
+
+        .device-row .v {
+            color: #aaa;
+            font-weight: 500
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin: 12px
+        }
+
+        .metric-item {
+            background: #0e0e18;
+            border: 1px solid #1e1e28;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center
+        }
+
+        .metric-val {
+            font-size: 18px;
+            font-weight: 600;
+            color: #4A90E2
+        }
+
+        .metric-label {
+            font-size: 10px;
+            color: #555;
+            margin-top: 2px
+        }
+
+        .cmd-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 12px 12px
+        }
+
+        .cmd-history h3 {
+            font-size: 12px;
+            color: #555;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 12px 0 8px;
+            position: sticky;
+            top: 0;
+            background: rgba(10, 10, 16, .9);
+            padding: 4px 0
+        }
+
+        .cmd-item {
+            background: #0e0e18;
+            border: 1px solid #1e1e28;
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin-bottom: 4px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: slideIn .3s ease
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0)
+            }
+        }
+
+        .cmd-icon {
+            font-size: 16px;
+            flex-shrink: 0
+        }
+
+        .cmd-text {
+            flex: 1;
+            color: #999;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap
+        }
+
+        .cmd-badge {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            flex-shrink: 0
+        }
+
+        .cmd-badge.ok {
+            background: rgba(52, 199, 89, .12);
+            color: #34C759
+        }
+
+        .cmd-badge.run {
+            background: rgba(255, 149, 0, .12);
+            color: #FF9500
+        }
+
+        /* 中央面板 */
+        .center-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative
+        }
+
+        /* 执行视窗 */
+        .exec-viewport {
+            flex: 1;
+            position: relative;
+            overflow: hidden
+        }
+
+        .exec-idle {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity .3s
+        }
+
+        .exec-idle.hidden {
+            opacity: 0;
+            pointer-events: none
+        }
+
+        .idle-avatar {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            opacity: .3;
+            margin-bottom: 12px
+        }
+
+        .idle-text {
+            font-size: 14px;
+            color: #333
+        }
+
+        /* 终端窗口 */
+        .terminal-window {
+            position: absolute;
+            inset: 16px;
+            background: #0a0a10;
+            border: 1px solid #1e1e28;
+            border-radius: 12px;
+            display: none;
+            flex-direction: column;
+            animation: fadeScale .3s ease
+        }
+
+        @keyframes fadeScale {
+            from {
+                opacity: 0;
+                transform: scale(.97)
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1)
+            }
+        }
+
+        .terminal-window.visible {
+            display: flex
+        }
+
+        .term-title {
+            height: 36px;
+            background: #0e0e18;
+            border-bottom: 1px solid #1a1a24;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            gap: 6px
+        }
+
+        .term-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%
+        }
+
+        .term-dot.r {
+            background: #FF5F56
+        }
+
+        .term-dot.y {
+            background: #FFBD2E
+        }
+
+        .term-dot.g {
+            background: #27C93F
+        }
+
+        .term-label {
+            font-size: 11px;
+            color: #666;
+            margin-left: 8px;
+            font-family: 'SF Mono', monospace
+        }
+
+        .term-body {
+            flex: 1;
+            padding: 12px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Menlo', monospace;
+            font-size: 13px;
+            line-height: 1.6
+        }
+
+        .term-line {
+            animation: typeIn .2s ease
+        }
+
+        @keyframes typeIn {
+            from {
+                opacity: 0
+            }
+
+            to {
+                opacity: 1
+            }
+        }
+
+        .term-prompt {
+            color: #4A90E2
+        }
+
+        .term-output {
+            color: #8a8a8a
+        }
+
+        .term-success {
+            color: #34C759
+        }
+
+        .term-error {
+            color: #FF3B30
+        }
+
+        /* 浏览器窗口 */
+        .browser-window {
+            position: absolute;
+            inset: 16px;
+            background: #0a0a10;
+            border: 1px solid #1e1e28;
+            border-radius: 12px;
+            display: none;
+            flex-direction: column;
+            animation: fadeScale .3s ease
+        }
+
+        .browser-window.visible {
+            display: flex
+        }
+
+        .browser-bar {
+            height: 36px;
+            background: #0e0e18;
+            border-bottom: 1px solid #1a1a24;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            gap: 6px
+        }
+
+        .browser-dots {
+            display: flex;
+            gap: 4px
+        }
+
+        .browser-url {
+            flex: 1;
+            background: #08080d;
+            border: 1px solid #1a1a24;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 11px;
+            color: #4A90E2;
+            font-family: 'SF Mono', monospace;
+            margin: 0 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap
+        }
+
+        .browser-body {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #555
+        }
+
+        /* 通知弹窗 */
+        .notify-popup {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            background: rgba(20, 20, 30, .95);
+            border: 1px solid #2a2a3a;
+            border-radius: 14px;
+            padding: 14px 18px;
+            max-width: 320px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, .4);
+            z-index: 100;
+            animation: notifyIn .4s ease;
+            display: none
+        }
+
+        .notify-popup.visible {
+            display: block
+        }
+
+        @keyframes notifyIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(.9)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1)
+            }
+        }
+
+        .notify-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #e8e8ed;
+            margin-bottom: 4px
+        }
+
+        .notify-body {
+            font-size: 12px;
+            color: #888
+        }
+
+        .notify-icon {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            font-size: 20px
+        }
+
+        /* 语音波形 */
+        .voice-overlay {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            animation: fadeScale .3s ease
+        }
+
+        .voice-overlay.visible {
+            display: flex
+        }
+
+        .voice-bars {
+            display: flex;
+            gap: 3px;
+            align-items: center;
+            height: 60px;
+            margin-bottom: 12px
+        }
+
+        .voice-bar {
+            width: 4px;
+            background: #4A90E2;
+            border-radius: 2px;
+            animation: voiceWave .6s ease-in-out infinite alternate
+        }
+
+        .voice-bar:nth-child(1) {
+            height: 20px;
+            animation-delay: 0s
+        }
+
+        .voice-bar:nth-child(2) {
+            height: 35px;
+            animation-delay: .1s
+        }
+
+        .voice-bar:nth-child(3) {
+            height: 50px;
+            animation-delay: .15s
+        }
+
+        .voice-bar:nth-child(4) {
+            height: 40px;
+            animation-delay: .2s
+        }
+
+        .voice-bar:nth-child(5) {
+            height: 55px;
+            animation-delay: .25s
+        }
+
+        .voice-bar:nth-child(6) {
+            height: 30px;
+            animation-delay: .3s
+        }
+
+        .voice-bar:nth-child(7) {
+            height: 45px;
+            animation-delay: .35s
+        }
+
+        .voice-bar:nth-child(8) {
+            height: 25px;
+            animation-delay: .4s
+        }
+
+        .voice-bar:nth-child(9) {
+            height: 50px;
+            animation-delay: .45s
+        }
+
+        .voice-bar:nth-child(10) {
+            height: 35px;
+            animation-delay: .5s
+        }
+
+        @keyframes voiceWave {
+            from {
+                height: 10px;
+                opacity: .4
+            }
+
+            to {
+                height: 55px;
+                opacity: 1
+            }
+        }
+
+        .voice-text {
+            font-size: 16px;
+            color: #888;
+            max-width: 400px;
+            text-align: center
+        }
+
+        /* 右面板 */
+        .right-panel {
+            width: 300px;
+            border-left: 1px solid #1a1a24;
+            display: flex;
+            flex-direction: column;
+            background: rgba(10, 10, 16, .6)
+        }
+
+        .rp-section {
+            padding: 12px
+        }
+
+        .rp-title {
+            font-size: 11px;
+            color: #555;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px
+        }
+
+        .activity-feed {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 12px 12px
+        }
+
+        .feed-item {
+            background: #0e0e18;
+            border: 1px solid #1e1e28;
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            animation: slideIn .3s ease
+        }
+
+        .feed-ts {
+            font-size: 10px;
+            color: #333;
+            font-family: 'SF Mono', monospace
+        }
+
+        .feed-type {
+            font-size: 12px;
+            font-weight: 500;
+            margin: 4px 0 2px;
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .feed-detail {
+            font-size: 11px;
+            color: #666;
+            word-break: break-all
+        }
+
+        .feed-result {
+            font-size: 11px;
+            margin-top: 4px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-family: 'SF Mono', monospace
+        }
+
+        .feed-result.ok {
+            background: rgba(52, 199, 89, .06);
+            color: #34C759
+        }
+
+        .feed-result.err {
+            background: rgba(255, 59, 48, .06);
+            color: #FF3B30
+        }
+
+        /* 底栏 */
+        .bottom-bar {
+            height: 32px;
+            background: rgba(8, 8, 13, .9);
+            border-top: 1px solid #1a1a24;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            font-size: 11px;
+            color: #444;
+            gap: 20px;
+            flex-shrink: 0
+        }
+
+        .bb-item {
+            display: flex;
+            align-items: center;
+            gap: 4px
+        }
+
+        .bb-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%
+        }
+
+        .bb-dot.green {
+            background: #34C759
+        }
+
+        .bb-dot.blue {
+            background: #4A90E2
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ═══════════════ 星空背景 ═══════════════ -->
+    <div class="starfield">
+        <div class="nebula"></div>
+        <div class="stars-sm"></div>
+        <div class="stars-md"></div>
+        <div class="stars-lg"></div>
+        <div class="shooting-star ss1"></div>
+        <div class="shooting-star ss2"></div>
+        <div class="shooting-star ss3"></div>
+    </div>
+
+    <!-- ═══════════════ 待机页 ═══════════════ -->
+    <div class="standby-page" id="standbyPage">
+        <div class="pulse-ring"></div>
+        <div class="pulse-ring"></div>
+        <div class="pulse-ring"></div>
+
+        <div class="standby-left">
+            <div class="standby-title">AI投屏 · 云控终端</div>
+            <div class="standby-sub">等待手机连接...</div>
+
+            <div class="connect-box">
+                <div class="connect-method">
+                    <div class="connect-label">扫码连接</div>
+                    <div class="qr-box"><canvas id="qrCanvas"></canvas></div>
+                </div>
+                <div class="divider-line"></div>
+                <div class="connect-method">
+                    <div class="connect-label">投屏码</div>
+                    <div class="cast-code" id="castCode">——</div>
+                    <div style="margin-top:16px">
+                        <div class="connect-label">局域网地址</div>
+                        <div style="font-size:14px;color:#4A90E2;font-family:monospace;margin-top:4px" id="localIP">—
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="standby-hint">手机浏览器打开 <span id="hintUrl">http://IP:3210</span> 即可远程操控</div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ 活跃页 ═══════════════ -->
+    <div class="active-page" id="activePage">
+        <!-- 顶栏 -->
+        <div style="display:flex;flex-direction:column;width:100%;height:100%">
+            <div class="top-bar">
+                <div class="top-logo">
+                    <img src="ai-avatar.png" alt="">
+                    <span>AI投屏 云控终端</span>
+                </div>
+                <div class="top-status">
+                    <div class="status-dot"></div>
+                    <span class="status-text" id="connStatus">手机已连接</span>
+                    <span class="top-time" id="topTime">—</span>
+                </div>
+            </div>
+
+            <div class="main-body">
+                <!-- 左面板 -->
+                <div class="left-panel">
+                    <div class="device-card">
+                        <h3>📱 控制端</h3>
+                        <div class="device-row"><span class="k">来源</span><span class="v" id="ctrlFrom">手机端</span></div>
+                        <div class="device-row"><span class="k">协议</span><span class="v">HTTP + SSE</span></div>
+                        <div class="device-row"><span class="k">连接时间</span><span class="v" id="ctrlTime">—</span></div>
+                    </div>
+                    <div class="device-card">
+                        <h3>🖥 本机信息</h3>
+                        <div class="device-row"><span class="k">主机</span><span class="v" id="dHost">—</span></div>
+                        <div class="device-row"><span class="k">系统</span><span class="v" id="dPlatform">—</span></div>
+                        <div class="device-row"><span class="k">CPU</span><span class="v" id="dCpu">—</span></div>
+                        <div class="device-row"><span class="k">内存</span><span class="v" id="dMem">—</span></div>
+                    </div>
+                    <div class="metric-grid">
+                        <div class="metric-item">
+                            <div class="metric-val" id="mCmdCount">0</div>
+                            <div class="metric-label">指令总数</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-val" id="mSuccessRate">—</div>
+                            <div class="metric-label">成功率</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-val" id="mUptime">—</div>
+                            <div class="metric-label">运行时间</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-val" id="mLatency">—</div>
+                            <div class="metric-label">延迟</div>
+                        </div>
+                    </div>
+                    <div class="cmd-history">
+                        <h3>📋 指令历史</h3>
+                        <div id="cmdList"></div>
+                    </div>
+                </div>
+
+                <!-- 中央面板 -->
+                <div class="center-panel">
+                    <div class="exec-viewport" id="execViewport">
+                        <!-- 空闲态 -->
+                        <div class="exec-idle" id="execIdle">
+                            <img src="ai-avatar.png" class="idle-avatar" alt="">
+                            <div class="idle-text">等待指令...</div>
+                        </div>
+                        <!-- 终端窗口 -->
+                        <div class="terminal-window" id="termWindow">
+                            <div class="term-title">
+                                <span class="term-dot r"></span><span class="term-dot y"></span><span
+                                    class="term-dot g"></span>
+                                <span class="term-label">Terminal — zsh</span>
+                            </div>
+                            <div class="term-body" id="termBody"></div>
+                        </div>
+                        <!-- 浏览器窗口 -->
+                        <div class="browser-window" id="browserWindow">
+                            <div class="browser-bar">
+                                <div class="browser-dots"><span class="term-dot r"></span><span
+                                        class="term-dot y"></span><span class="term-dot g"></span></div>
+                                <div class="browser-url" id="browserUrl">about:blank</div>
+                            </div>
+                            <div class="browser-body" id="browserBody">正在加载...</div>
+                        </div>
+                        <!-- 语音波形 -->
+                        <div class="voice-overlay" id="voiceOverlay">
+                            <div class="voice-bars">
+                                <div class="voice-bar"></div>
+                                <div class="voice-bar"></div>
+                                <div class="voice-bar"></div>
+                                <div class="voice-bar"></div>
+                                <div class="voice-bar"></div>
+                                <div class="voice-bar"></div>
+                                <div class="voice-bar"></div>
+                                <div class="voice-bar"></div>
+                                <div class="voice-bar"></div>
+                                <div class="voice-bar"></div>
+                            </div>
+                            <div class="voice-text" id="voiceText">🔊 语音播报中...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右面板 -->
+                <div class="right-panel">
+                    <div class="rp-section">
+                        <div class="rp-title">🔴 实时动态</div>
+                    </div>
+                    <div class="activity-feed" id="activityFeed"></div>
+                </div>
+            </div>
+
+            <div class="bottom-bar">
+                <div class="bb-item"><span class="bb-dot green"></span> SSE 已连接</div>
+                <div class="bb-item"><span class="bb-dot blue"></span> 指令通道就绪</div>
+                <div class="bb-item" id="bbCmdCount">已执行 0 条指令</div>
+                <div style="margin-left:auto" id="bbTime">—</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知弹窗 -->
+    <div class="notify-popup" id="notifyPopup">
+        <div class="notify-icon">🔔</div>
+        <div class="notify-title" id="notifyTitle">—</div>
+        <div class="notify-body" id="notifyBody">—</div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        //  AI投屏 云控终端 — 收端
+        // ═══════════════════════════════════════════════════════════════
+        var RX = {
+            sse: null,
+            cmdCount: 0,
+            successCount: 0,
+            startTime: null,
+            castCode: '',
+
+            init: function () {
+                this.generateCastCode();
+                this.generateQR();
+                this.fetchInfo();
+                this.connectSSE();
+                this.startClock();
+            },
+
+            // 生成投屏码
+            generateCastCode: function () {
+                this.castCode = String(Math.floor(100000 + Math.random() * 900000));
+                document.getElementById('castCode').textContent = this.castCode;
+            },
+
+            // 生成二维码（纯Canvas实现）
+            generateQR: function () {
+                var host = location.hostname || 'localhost';
+                var url = 'http://' + host + ':3210';
+                document.getElementById('localIP').textContent = url;
+                document.getElementById('hintUrl').textContent = url;
+
+                // 简易QR模拟：绘制包含URL的像素图案
+                var canvas = document.getElementById('qrCanvas');
+                var ctx = canvas.getContext('2d');
+                canvas.width = 124; canvas.height = 124;
+                ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 124, 124);
+
+                // 绘制定位图案
+                function drawFinder(x, y) {
+                    ctx.fillStyle = '#000'; ctx.fillRect(x, y, 28, 28);
+                    ctx.fillStyle = '#fff'; ctx.fillRect(x + 4, y + 4, 20, 20);
+                    ctx.fillStyle = '#000'; ctx.fillRect(x + 8, y + 8, 12, 12);
+                }
+                drawFinder(4, 4); drawFinder(92, 4); drawFinder(4, 92);
+
+                // 绘制数据区（伪随机模拟）
+                var seed = 0;
+                for (var i = 0; i < url.length; i++) seed += url.charCodeAt(i);
+                for (var r = 0; r < 124; r += 4) {
+                    for (var c = 0; c < 124; c += 4) {
+                        if ((r < 32 && c < 32) || (r < 32 && c > 88) || (r > 88 && c < 32)) continue;
+                        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+                        if (seed % 3 !== 0) { ctx.fillStyle = '#000'; ctx.fillRect(c, r, 4, 4); }
+                    }
+                }
+
+                // 中心logo
+                ctx.fillStyle = '#fff'; ctx.fillRect(47, 47, 30, 30);
+                ctx.fillStyle = '#4A90E2'; ctx.fillRect(50, 50, 24, 24);
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText('AI', 62, 66);
+            },
+
+            // 获取本机信息
+            fetchInfo: function () {
+                var self = this;
+                fetch('/api/info').then(function (r) { return r.json() }).then(function (d) {
+                    document.getElementById('dHost').textContent = d.hostname;
+                    document.getElementById('dPlatform').textContent = d.platform + ' (' + d.arch + ')';
+                    document.getElementById('dCpu').textContent = d.cpus + ' 核心';
+                    document.getElementById('dMem').textContent = d.memory;
+                    document.getElementById('mUptime').textContent = d.uptime;
+                });
+            },
+
+            // 连接SSE
+            connectSSE: function () {
+                var self = this;
+                this.sse = new EventSource('/api/stream');
+
+                this.sse.addEventListener('connected', function (e) {
+                    console.log('SSE connected');
+                });
+
+                this.sse.addEventListener('command', function (e) {
+                    var data = JSON.parse(e.data);
+                    self.cmdCount++;
+                    if (!self.startTime) {
+                        self.startTime = Date.now();
+                        self.showActivePage();
+                    }
+                    self.onCommand(data);
+                });
+
+                this.sse.addEventListener('result', function (e) {
+                    var data = JSON.parse(e.data);
+                    self.onResult(data);
+                });
+
+                this.sse.onerror = function () {
+                    console.log('SSE error, reconnecting...');
+                };
+            },
+
+            // 切换到活跃页
+            showActivePage: function () {
+                document.getElementById('standbyPage').classList.add('hidden');
+                document.getElementById('activePage').classList.add('visible');
+                document.getElementById('ctrlTime').textContent = new Date().toLocaleTimeString('zh-CN');
+            },
+
+            // 收到指令
+            onCommand: function (data) {
+                document.getElementById('mCmdCount').textContent = this.cmdCount;
+                document.getElementById('bbCmdCount').textContent = '已执行 ' + this.cmdCount + ' 条指令';
+
+                var icon = { openUrl: '🌐', openFile: '📂', notify: '💬', say: '🔊', screenshot: '📸', shell: '🖥', getInfo: '📋' }[data.type] || '⚡';
+
+                // 左栏指令历史
+                var list = document.getElementById('cmdList');
+                var item = document.createElement('div');
+                item.className = 'cmd-item';
+                item.innerHTML = '<span class="cmd-icon">' + icon + '</span><span class="cmd-text">' + (typeof data.data === 'object' ? JSON.stringify(data.data) : data.data || data.type) + '</span><span class="cmd-badge run">执行中</span>';
+                list.insertBefore(item, list.firstChild);
+                this._lastCmdItem = item;
+
+                // 右栏活动
+                this.addFeedItem(icon, data.type, typeof data.data === 'object' ? JSON.stringify(data.data) : data.data);
+
+                // 中央视窗
+                this.showExec(data);
+
+                // 延迟计算
+                if (data.ts) {
+                    var lat = Date.now() - data.ts;
+                    document.getElementById('mLatency').textContent = lat + 'ms';
+                }
+            },
+
+            // 收到结果
+            onResult: function (data) {
+                if (data.success) this.successCount++;
+                var rate = this.cmdCount > 0 ? Math.round(this.successCount / this.cmdCount * 100) + '%' : '—';
+                document.getElementById('mSuccessRate').textContent = rate;
+
+                // 更新最后一条指令状态
+                if (this._lastCmdItem) {
+                    var badge = this._lastCmdItem.querySelector('.cmd-badge');
+                    badge.className = 'cmd-badge ' + (data.success ? 'ok' : 'err');
+                    badge.textContent = data.success ? '成功' : '失败';
+                }
+
+                // 实时更新执行窗口
+                this.showResult(data);
+            },
+
+            // 中央执行窗口
+            showExec: function (data) {
+                var idle = document.getElementById('execIdle');
+                var term = document.getElementById('termWindow');
+                var browser = document.getElementById('browserWindow');
+                var voice = document.getElementById('voiceOverlay');
+                var notify = document.getElementById('notifyPopup');
+
+                // 全部隐藏
+                idle.classList.add('hidden');
+                term.classList.remove('visible');
+                browser.classList.remove('visible');
+                voice.classList.remove('visible');
+                notify.classList.remove('visible');
+
+                switch (data.type) {
+                    case 'shell':
+                        term.classList.add('visible');
+                        document.getElementById('termBody').innerHTML =
+                            '<div class="term-line"><span class="term-prompt">$ </span>' + (data.data || '') + '</div>' +
+                            '<div class="term-line term-output">执行中...</div>';
+                        break;
+
+                    case 'openUrl':
+                        browser.classList.add('visible');
+                        document.getElementById('browserUrl').textContent = data.data || '';
+                        document.getElementById('browserBody').innerHTML = '🌐 正在打开 <span style="color:#4A90E2">' + (data.data || '') + '</span>';
+                        break;
+
+                    case 'say':
+                        voice.classList.add('visible');
+                        document.getElementById('voiceText').textContent = '🔊 "' + (data.data || '') + '"';
+                        break;
+
+                    case 'notify':
+                        // 显示通知弹窗
+                        notify.classList.add('visible');
+                        document.getElementById('notifyTitle').textContent = (data.data && data.data.title) || 'AI投屏';
+                        document.getElementById('notifyBody').textContent = (data.data && data.data.body) || '';
+                        setTimeout(function () { notify.classList.remove('visible'); }, 4000);
+                        break;
+
+                    case 'screenshot':
+                        term.classList.add('visible');
+                        document.getElementById('termBody').innerHTML =
+                            '<div class="term-line"><span class="term-prompt">$ </span>screencapture -x /tmp/lebocast_screen.png</div>' +
+                            '<div class="term-line term-output">截图中...</div>';
+                        break;
+
+                    default:
+                        // 其他指令走终端显示
+                        term.classList.add('visible');
+                        document.getElementById('termBody').innerHTML =
+                            '<div class="term-line"><span class="term-prompt">» </span>' + data.type + ' ' + (typeof data.data === 'string' ? data.data : JSON.stringify(data.data || '')) + '</div>';
+                }
+            },
+
+            showResult: function (data) {
+                if (data.action === 'shell' && data.output) {
+                    var body = document.getElementById('termBody');
+                    // 移除"执行中"
+                    var lines = body.querySelectorAll('.term-line');
+                    if (lines.length > 1 && lines[lines.length - 1].textContent === '执行中...') {
+                        lines[lines.length - 1].remove();
+                    }
+                    // 添加真实输出
+                    var outputLines = data.output.split('\n');
+                    outputLines.forEach(function (line) {
+                        if (!line.trim()) return;
+                        var el = document.createElement('div');
+                        el.className = 'term-line term-output';
+                        el.textContent = line;
+                        body.appendChild(el);
+                    });
+                    // 成功标记
+                    var done = document.createElement('div');
+                    done.className = 'term-line term-success';
+                    done.textContent = data.success ? '✓ 执行完成' : '✗ 执行失败';
+                    body.appendChild(done);
+                }
+
+                if (data.action === 'openUrl') {
+                    document.getElementById('browserBody').innerHTML = '✅ 已在本机浏览器打开 <span style="color:#4A90E2">' + (data.data || '') + '</span>';
+                }
+
+                if (data.action === 'say') {
+                    document.getElementById('voiceText').textContent = '✅ 播报完成';
+                    setTimeout(function () {
+                        document.getElementById('voiceOverlay').classList.remove('visible');
+                        document.getElementById('execIdle').classList.remove('hidden');
+                    }, 2000);
+                }
+
+                if (data.action === 'screenshot') {
+                    var body = document.getElementById('termBody');
+                    var done = document.createElement('div');
+                    done.className = 'term-line term-success';
+                    done.textContent = '✓ 截图已保存: /tmp/lebocast_screen.png';
+                    body.appendChild(done);
+                }
+
+                // 右栏结果
+                this.addFeedResult(data);
+            },
+
+            // 右栏活动
+            addFeedItem: function (icon, type, detail) {
+                var feed = document.getElementById('activityFeed');
+                var el = document.createElement('div');
+                el.className = 'feed-item';
+                el.id = 'feed_' + this.cmdCount;
+                var now = new Date();
+                el.innerHTML =
+                    '<div class="feed-ts">' + now.toLocaleTimeString('zh-CN') + '</div>' +
+                    '<div class="feed-type">' + icon + ' ' + type + '</div>' +
+                    '<div class="feed-detail">' + (detail || '') + '</div>';
+                feed.insertBefore(el, feed.firstChild);
+            },
+
+            addFeedResult: function (data) {
+                var el = document.getElementById('feed_' + this.cmdCount);
+                if (!el) return;
+                var res = document.createElement('div');
+                res.className = 'feed-result ' + (data.success ? 'ok' : 'err');
+                if (data.output) {
+                    res.textContent = data.output.substring(0, 100);
+                } else {
+                    res.textContent = data.success ? '✓ 成功' : '✗ 失败: ' + (data.error || '');
+                }
+                el.appendChild(res);
+            },
+
+            // 时钟
+            startClock: function () {
+                setInterval(function () {
+                    var now = new Date();
+                    var ts = now.toLocaleTimeString('zh-CN');
+                    var topTime = document.getElementById('topTime');
+                    var bbTime = document.getElementById('bbTime');
+                    if (topTime) topTime.textContent = ts;
+                    if (bbTime) bbTime.textContent = ts;
+                }, 1000);
+            }
+        };
+
+        RX.init();
+    </script>
+</body>
+
+</html>

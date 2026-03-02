@@ -1,0 +1,21 @@
+{
+  "name": "ai-cast-receiver",
+  "version": "1.0.0",
+  "description": "纯Node.js实现的投屏接收端服务，零依赖",
+  "main": "test/server.js",
+  "scripts": {
+    "start": "node test/server.js"
+  },
+  "keywords": [
+    "cast",
+    "screen-mirroring",
+    "receiver",
+    "nodejs",
+    "zero-dependency"
+  ],
+  "author": "Emma Wu",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
